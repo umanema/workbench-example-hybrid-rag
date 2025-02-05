@@ -36,7 +36,7 @@ from chatui.pages import utils
 
 _LOGGER = logging.getLogger(__name__)
 PATH = "/"
-TITLE = "Hybrid RAG: Chat UI"
+TITLE = "Hybrid RAG: Chat UI (Custom Edition)"
 OUTPUT_TOKENS = 250
 MAX_DOCS = 5
 
@@ -176,10 +176,20 @@ def build_page(client: chat_client.ChatClient) -> gr.Blocks:
                             ["Toggle to use Vector Database"], label="Vector Database", info="Supply your uploaded documents to the chatbot"
                         )
 
+                with gr.Row(equal_height=True):
+                    with gr.Column(scale=2, min_width=200):
+                        sys = gr.Textbox(
+                            show_label=False,
+                            lines=3,
+                            placeholder="You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe. Your answers should not include any harmful, unethical, dangerous, or illegal content. Please ensure that your responses are positive in nature.",
+                            container=False,
+                            interactive=True,
+                        )
+
                 # Render the row of buttons: submit query, clear history, show metrics and contexts
                 with gr.Row():
                     submit_btn = gr.Button(value="[NOT READY] Submit", interactive=False)
-                    _ = gr.ClearButton([msg, chatbot, metrics, metrics_history], value="Clear history")
+                    _ = gr.ClearButton([msg, sys, chatbot, metrics, metrics_history], value="Clear history")
                     mtx_show = gr.Button(value="Show Metrics")
                     mtx_hide = gr.Button(value="Hide Metrics", visible=False)
                     ctx_show = gr.Button(value="Show Context")
@@ -1108,7 +1118,8 @@ def build_page(client: chat_client.ChatClient) -> gr.Blocks:
                                local_model_id,
                                msg, 
                                metrics_history,
-                               chatbot], [msg, chatbot, context, metrics, metrics_history]
+                               chatbot,
+                               sys], [msg, chatbot, context, metrics, metrics_history]
         )
         submit_btn.click(
             _my_build_stream, [kb_checkbox, 
@@ -1128,7 +1139,8 @@ def build_page(client: chat_client.ChatClient) -> gr.Blocks:
                                local_model_id,
                                msg, 
                                metrics_history,
-                               chatbot], [msg, chatbot, context, metrics, metrics_history]
+                               chatbot,
+                               sys], [msg, chatbot, context, metrics, metrics_history]
         )
 
     page.queue()
@@ -1154,6 +1166,7 @@ def _stream_predict(
     question: str,
     metrics_history: dict,
     chat_history: List[Tuple[str, str]],
+    system: str
 ) -> Any:
     """
     Make a prediction of the response to the prompt.
@@ -1185,7 +1198,7 @@ def _stream_predict(
     chunks = ""
     _LOGGER.info(
         "processing inference request - %s",
-        str({"prompt": question, "use_knowledge_base": False if len(use_knowledge_base) == 0 else True}),
+        str({"system": system, "prompt": question, "use_knowledge_base": False if len(use_knowledge_base) == 0 else True}),
     )
 
     # Input validation for remote microservice settings
@@ -1208,10 +1221,11 @@ def _stream_predict(
                 retrieval_stime = time.time()
                 documents = client.search(question)
                 retrieval_ftime = str((time.time() - retrieval_stime) * 1000).split('.', 1)[0]
-
             # Generate the output
             chunk_num = 0
-            for chunk in client.predict(question, 
+            for chunk in client.predict_with_system_prompt(
+                                        system,
+                                        question, 
                                         utils.inference_to_config(inference_mode), 
                                         local_model_id,
                                         utils.cloud_to_config(nvcf_model_id), 
@@ -1224,6 +1238,7 @@ def _stream_predict(
                                         pres_pen_slider,
                                         False if len(use_knowledge_base) == 0 else True, 
                                         int(num_token_slider)):
+
                 
                 # The first chunk returned will always be the time to first token. Let's process that first.
                 if chunk_num == 0:

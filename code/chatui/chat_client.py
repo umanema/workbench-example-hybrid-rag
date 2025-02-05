@@ -55,7 +55,7 @@ class ChatClient:
             )
 
     def predict(
-        self, 
+        self,
         query: str, 
         mode: str, 
         local_model_id: str,
@@ -118,3 +118,49 @@ class ChatClient:
             _ = requests.post(
                 url, headers=headers, files=files, verify=False, timeout=120  # type: ignore [arg-type]
             )  # nosec # verify=false is intentional for now
+
+    def predict_with_system_prompt(
+            self,
+            system: str, 
+            query: str, 
+            mode: str, 
+            local_model_id: str,
+            nvcf_model_id: str, 
+            nim_model_ip: str,
+            nim_model_port: str, 
+            nim_model_id: str,
+            temp_slider: float,
+            top_p_slider: float,
+            freq_pen_slider: float,
+            pres_pen_slider: float,
+            use_knowledge_base: bool, 
+            num_tokens: int
+        ) -> typing.Generator[str, None, None]:
+            """Make a model prediction."""
+            data = {
+                "system": system,
+                "question": query,
+                "context": "",
+                "use_knowledge_base": use_knowledge_base,
+                "num_tokens": num_tokens,
+                "inference_mode": mode,
+                "local_model_id": local_model_id,
+                "nvcf_model_id": nvcf_model_id,
+                "nim_model_ip": nim_model_ip,
+                "nim_model_port": nim_model_port, 
+                "nim_model_id": nim_model_id,
+                "temp": temp_slider,
+                "top_p": top_p_slider,
+                "freq_pen": freq_pen_slider,
+                "pres_pen": pres_pen_slider,
+            }
+            url = f"{self.server_url}/generate"
+            _LOGGER.info(
+                "making inference request - %s", str({"server_url": url, "post_data": data})
+            )
+            msg = str({"server_url": url, "post_data": data})
+            print(f"making inference request - {msg}")
+
+            with requests.post(url, stream=True, json=data, timeout=10) as req:
+                for chunk in req.iter_content(16):
+                    yield chunk.decode("UTF-8")

@@ -198,6 +198,7 @@ def add_http_prefix(input_string: str) -> str:
     return input_string
 
 def llm_chain_streaming(
+    system: str,
     context: str, 
     question: str, 
     num_tokens: int, 
@@ -217,17 +218,17 @@ def llm_chain_streaming(
 
     if inference_mode == "local":
         if "nvidia" in local_model_id:
-            prompt = chat_templates.NVIDIA_CHAT_TEMPLATE.format(context_str=context, query_str=question)
+            prompt = chat_templates.NVIDIA_CHAT_TEMPLATE.format(system_str=system, context_str=context, query_str=question)
         elif "Llama-3" in local_model_id:
-            prompt = chat_templates.LLAMA_3_CHAT_TEMPLATE.format(context_str=context, query_str=question)
+            prompt = chat_templates.LLAMA_3_CHAT_TEMPLATE.format(system_str=system, context_str=context, query_str=question)
         elif "Llama-2" in local_model_id:
-            prompt = chat_templates.LLAMA_2_CHAT_TEMPLATE.format(context_str=context, query_str=question)
+            prompt = chat_templates.LLAMA_2_CHAT_TEMPLATE.format(system_str=system, context_str=context, query_str=question)
         elif "microsoft" in local_model_id:
-            prompt = chat_templates.MICROSOFT_CHAT_TEMPLATE.format(context_str=context, query_str=question)
+            prompt = chat_templates.MICROSOFT_CHAT_TEMPLATE.format(system_str=system, context_str=context, query_str=question)
         elif "mistralai" in local_model_id:
-            prompt = chat_templates.MISTRAL_CHAT_TEMPLATE.format(context_str=context, query_str=question)
+            prompt = chat_templates.MISTRAL_CHAT_TEMPLATE.format(system_str=system, context_str=context, query_str=question)
         else: 
-            prompt = chat_templates.NVIDIA_CHAT_TEMPLATE.format(context_str=context, query_str=question)
+            prompt = chat_templates.NVIDIA_CHAT_TEMPLATE.format(system_str=system, context_str=context, query_str=question)
         start = time.time()
         response = get_llm(inference_mode, nvcf_model_id, nim_model_ip, num_tokens, temp, top_p, freq_pen).stream_complete(prompt, max_new_tokens=num_tokens)
         perf = time.time() - start
@@ -240,15 +241,15 @@ def llm_chain_streaming(
                 break
     else:
         if inference_mode == "cloud" and "llama3" in nvcf_model_id:
-            prompt = chat_templates.LLAMA_3_CHAT_TEMPLATE.format(context_str=context, query_str=question)
+            prompt = chat_templates.LLAMA_3_CHAT_TEMPLATE.format(system_str=system, context_str=context, query_str=question)
         elif inference_mode == "cloud" and "llama2" in nvcf_model_id:
-            prompt = chat_templates.LLAMA_2_CHAT_TEMPLATE.format(context_str=context, query_str=question)
+            prompt = chat_templates.LLAMA_2_CHAT_TEMPLATE.format(system_str=system, context_str=context, query_str=question)
         elif inference_mode == "cloud" and "mistral" in nvcf_model_id:
-            prompt = chat_templates.MISTRAL_CHAT_TEMPLATE.format(context_str=context, query_str=question)
+            prompt = chat_templates.MISTRAL_CHAT_TEMPLATE.format(system_str=system, context_str=context, query_str=question)
         elif inference_mode == "cloud" and "microsoft" in nvcf_model_id:
-            prompt = chat_templates.MICROSOFT_CHAT_TEMPLATE.format(context_str=context, query_str=question)
+            prompt = chat_templates.MICROSOFT_CHAT_TEMPLATE.format(system_str=system, context_str=context, query_str=question)
         else:
-            prompt = chat_templates.GENERIC_CHAT_TEMPLATE.format(context_str=context, query_str=question)
+            prompt = chat_templates.GENERIC_CHAT_TEMPLATE.format(system_str=system, context_str=context, query_str=question)
         openai.api_key = os.environ.get('NVCF_RUN_KEY') if inference_mode == "cloud" else "xyz"
         openai.base_url = "https://integrate.api.nvidia.com/v1/" if inference_mode == "cloud" else add_http_prefix(nim_model_ip) + ":" + ("8000" if len(nim_model_port) == 0 else nim_model_port) + "/v1/"
 
@@ -282,7 +283,8 @@ def llm_chain_streaming(
             else:
                 continue
 
-def rag_chain_streaming(prompt: str, 
+def rag_chain_streaming(system: str,
+                        prompt: str, 
                         num_tokens: int, 
                         inference_mode: str, 
                         local_model_id: str,
@@ -304,17 +306,17 @@ def rag_chain_streaming(prompt: str,
         for node in nodes: 
             docs.append(node.get_text())
         if "nvidia" in local_model_id:
-            prompt = chat_templates.NVIDIA_RAG_TEMPLATE.format(context_str=", ".join(docs), query_str=prompt)
+            prompt = chat_templates.NVIDIA_RAG_TEMPLATE.format(system_str=system, context_str=", ".join(docs), query_str=prompt)
         elif "Llama-3" in local_model_id:
-            prompt = chat_templates.LLAMA_3_RAG_TEMPLATE.format(context_str=", ".join(docs), query_str=prompt)
+            prompt = chat_templates.LLAMA_3_RAG_TEMPLATE.format(system_str=system, context_str=", ".join(docs), query_str=prompt)
         elif "Llama-2" in local_model_id:
-            prompt = chat_templates.LLAMA_2_RAG_TEMPLATE.format(context_str=", ".join(docs), query_str=prompt)
+            prompt = chat_templates.LLAMA_2_RAG_TEMPLATE.format(system_str=system, context_str=", ".join(docs), query_str=prompt)
         elif "microsoft" in local_model_id:
-            prompt = chat_templates.MICROSOFT_RAG_TEMPLATE.format(context_str=", ".join(docs), query_str=prompt)
+            prompt = chat_templates.MICROSOFT_RAG_TEMPLATE.format(system_str=system, context_str=", ".join(docs), query_str=prompt)
         elif "mistralai" in local_model_id:
-            prompt = chat_templates.MISTRAL_RAG_TEMPLATE.format(context_str=", ".join(docs), query_str=prompt)
+            prompt = chat_templates.MISTRAL_RAG_TEMPLATE.format(system_str=system, context_str=", ".join(docs), query_str=prompt)
         else: 
-            prompt = chat_templates.NVIDIA_RAG_TEMPLATE.format(context_str=", ".join(docs), query_str=prompt)
+            prompt = chat_templates.NVIDIA_RAG_TEMPLATE.format(system_str=system, context_str=", ".join(docs), query_str=prompt)
         start = time.time()
         response = get_llm(inference_mode, 
                            nvcf_model_id, 
@@ -341,15 +343,15 @@ def rag_chain_streaming(prompt: str,
         for node in nodes: 
             docs.append(node.get_text())
         if inference_mode == "cloud" and "llama3" in nvcf_model_id:
-            prompt = chat_templates.LLAMA_3_RAG_TEMPLATE.format(context_str=", ".join(docs), query_str=prompt)
+            prompt = chat_templates.LLAMA_3_RAG_TEMPLATE.format(system_str=system, context_str=", ".join(docs), query_str=prompt)
         elif inference_mode == "cloud" and "llama2" in nvcf_model_id:
-            prompt = chat_templates.LLAMA_2_RAG_TEMPLATE.format(context_str=", ".join(docs), query_str=prompt)
+            prompt = chat_templates.LLAMA_2_RAG_TEMPLATE.format(system_str=system, context_str=", ".join(docs), query_str=prompt)
         elif inference_mode == "cloud" and "mistral" in nvcf_model_id:
-            prompt = chat_templates.MISTRAL_RAG_TEMPLATE.format(context_str=", ".join(docs), query_str=prompt)
+            prompt = chat_templates.MISTRAL_RAG_TEMPLATE.format(system_str=system, context_str=", ".join(docs), query_str=prompt)
         elif inference_mode == "cloud" and "microsoft" in nvcf_model_id:
-            prompt = chat_templates.MICROSOFT_RAG_TEMPLATE.format(context_str=", ".join(docs), query_str=prompt)
+            prompt = chat_templates.MICROSOFT_RAG_TEMPLATE.format(system_str=system, context_str=", ".join(docs), query_str=prompt)
         else:
-            prompt = chat_templates.GENERIC_RAG_TEMPLATE.format(context_str=", ".join(docs), query_str=prompt)
+            prompt = chat_templates.GENERIC_RAG_TEMPLATE.format(system_str=system, context_str=", ".join(docs), query_str=prompt)
         start = time.time()
         completion = openai.chat.completions.create(
           model= nvcf_model_id if inference_mode == "cloud" else ("meta/llama3-8b-instruct" if len(nim_model_id) == 0 else nim_model_id),

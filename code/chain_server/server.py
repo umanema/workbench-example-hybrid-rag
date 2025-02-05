@@ -38,7 +38,7 @@ chains.set_service_context("local", "playground_mistral_7b", "10.123.45.678", 25
 
 class Prompt(BaseModel):
     """Definition of the Prompt API data type."""
-
+    system: str
     question: str
     context: str
     use_knowledge_base: bool = True
@@ -111,7 +111,8 @@ async def generate_answer(prompt: Prompt) -> StreamingResponse:
                                                prompt.pres_pen)
         return StreamingResponse(generator, media_type="text/event-stream")  
 
-    generator = chains.llm_chain_streaming(prompt.context, 
+    generator = chains.llm_chain_streaming(prompt.system,
+                                           prompt.context, 
                                            prompt.question, 
                                            prompt.num_tokens, 
                                            prompt.inference_mode, 
