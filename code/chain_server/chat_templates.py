@@ -67,7 +67,8 @@ LLAMA_3_CHAT_TEMPLATE = (
 
 NVIDIA_CHAT_TEMPLATE = (
     "System: {system_str} \n"
-    "User: {context_str} {query_str} \n"
+    "{context_str} \n"
+    "User: {query_str} \n"
     "Assistant: "
 )
 
@@ -172,9 +173,8 @@ NVIDIA_RAG_TEMPLATE = (
 
 MICROSOFT_RAG_TEMPLATE = (
     "<|user|>\n"
-    "{context_str}\n"
-    "Context: {context_str} Question: {query_str} Only return the helpful"
-    " answer below and nothing else. <|end|> \n" 
+    "{system_str}\n"
+    "Context: {context_str} Question: {query_str}<|end|> \n" 
     "<|assistant|>"
 )
 
@@ -186,7 +186,6 @@ MICROSOFT_RAG_TEMPLATE = (
 # )
 
 GENERIC_RAG_TEMPLATE = (
-    "{context_str}\n"
-    "Context: {context_str} Question: {query_str} Only return the helpful"
-    " answer below and nothing else. \n" 
+    "{system_str}\n"
+    "Context: {context_str} Question: {query_str} \n" 
 )

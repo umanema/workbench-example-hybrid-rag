@@ -97,7 +97,8 @@ async def generate_answer(prompt: Prompt) -> StreamingResponse:
     """Generate and stream the response to the provided prompt."""
     
     if prompt.use_knowledge_base:
-        generator = chains.rag_chain_streaming(prompt.question, 
+        generator = chains.rag_chain_streaming(prompt.system,
+                                               prompt.question, 
                                                prompt.num_tokens, 
                                                prompt.inference_mode, 
                                                prompt.local_model_id,
